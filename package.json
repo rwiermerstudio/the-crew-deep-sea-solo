@@ -1,0 +1,12 @@
+{
+  "name": "deep-sea-crew-solo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "lint": "node --check src/game.js && node --check src/app.js",
+    "build": "node scripts/build.mjs",
+    "verify": "npm run lint && npm test && npm run build"
+  }
+}

@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { makeDeck, deal, legalCards, trickWinner, communicationKind } from '../src/game.js';
+test('deck has 40 distinct cards', () => { const d = makeDeck(); assert.equal(d.length, 40); assert.equal(new Set(d.map(c => c.id)).size, 40); });
+test('deal is even at four players', () => assert.deepEqual(deal(4, () => .2).map(h => h.length), [10,10,10,10]));
+test('following suit is mandatory', () => { const hand=[{suit:'coral',value:2},{suit:'sub',value:4}]; assert.deepEqual(legalCards(hand,'coral'), [hand[0]]); });
+test('highest trump wins a trick', () => { const t=[{player:0,card:{suit:'sun',value:9}},{player:1,card:{suit:'sub',value:1}},{player:2,card:{suit:'sub',value:3}}]; assert.equal(trickWinner(t).player,2); });
+test('communication only permits extrema or only card', () => { const h=[{suit:'kelp',value:2},{suit:'kelp',value:5},{suit:'sun',value:3}]; assert.equal(communicationKind(h,h[0]),'lowest'); assert.equal(communicationKind(h,h[1]),'highest'); assert.equal(communicationKind(h,{suit:'kelp',value:3}),null); });

@@ -1,0 +1,46 @@
+export const SUITS = ['coral', 'current', 'kelp', 'sun'];
+export const SUIT_NAMES = { coral: 'Coral', current: 'Current', kelp: 'Kelp', sun: 'Sun', sub: 'Submarine' };
+
+export function makeDeck() {
+  return [...SUITS.flatMap(suit => Array.from({ length: 9 }, (_, i) => ({ suit, value: i + 1, id: `${suit}-${i + 1}` }))),
+    ...Array.from({ length: 4 }, (_, i) => ({ suit: 'sub', value: i + 1, id: `sub-${i + 1}` }))];
+}
+export function shuffle(items, random = Math.random) {
+  const out = [...items]; for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; } return out;
+}
+export function deal(playerCount, random = Math.random) {
+  const deck = shuffle(makeDeck(), random); const hands = Array.from({ length: playerCount }, () => []);
+  deck.forEach((card, i) => { if (i < Math.floor(deck.length / playerCount) * playerCount) hands[i % playerCount].push(card); });
+  hands.forEach(hand => hand.sort(cardCompare)); return hands;
+}
+export function cardCompare(a, b) { return (a.suit + String(a.value).padStart(2, '0')).localeCompare(b.suit + String(b.value).padStart(2, '0')); }
+export function legalCards(hand, leadSuit) { const matching = leadSuit ? hand.filter(c => c.suit === leadSuit) : []; return matching.length ? matching : hand; }
+export function trickWinner(trick) {
+  const lead = trick[0].card.suit;
+  return trick.reduce((best, entry) => {
+    const a = entry.card, b = best.card;
+    if (a.suit === 'sub' && b.suit !== 'sub') return entry;
+    if (a.suit === b.suit && a.value > b.value) return entry;
+    if (b.suit !== 'sub' && a.suit === lead && b.suit !== lead) return entry;
+    return best;
+  });
+}
+export function captainFor(hands) { return hands.findIndex(hand => hand.some(c => c.id === 'sub-4')); }
+export function communicationKind(hand, card) {
+  if (card.suit === 'sub') return null;
+  const same = hand.filter(c => c.suit === card.suit).map(c => c.value);
+  if (same.length === 1) return 'only';
+  if (card.value === Math.max(...same)) return 'highest';
+  if (card.value === Math.min(...same)) return 'lowest';
+  return null;
+}
+export function botChoice(hand, trick, tasks, botIndex) {
+  const legal = legalCards(hand, trick[0]?.card.suit);
+  const target = tasks.find(t => !t.done && t.owner === botIndex);
+  // Prefer a legal task card, otherwise avoid winning an unowned/other-owned target if possible.
+  const taskCard = target && legal.find(c => c.id === target.card.id);
+  if (taskCard) return taskCard;
+  const ranked = [...legal].sort((a, b) => a.value - b.value || a.suit.localeCompare(b.suit));
+  return ranked[0];
+}
+export function cardLabel(card) { return `${SUIT_NAMES[card.suit]} ${card.value}`; }
