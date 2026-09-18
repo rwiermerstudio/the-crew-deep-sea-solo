@@ -17,3 +17,8 @@ test('bot avoids stealing an active team-mate recovery when a losing discard exi
   const tasks=[{card:{suit:'coral',value:8,id:'coral-8'},owner:0,done:false}];
   assert.equal(botChoice(hand,trick,tasks,1).id,'sun-1');
 });
+test('bot keeps an owned recovery card when leading without a certain win', () => {
+  const hand=[{suit:'coral',value:5,id:'coral-5'},{suit:'sun',value:1,id:'sun-1'}];
+  const tasks=[{card:{suit:'coral',value:5,id:'coral-5'},owner:1,done:false}];
+  assert.equal(botChoice(hand,[],tasks,1).id,'sun-1');
+});

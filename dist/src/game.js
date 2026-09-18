@@ -55,15 +55,7 @@ export function botChoice(hand, trick, tasks, botIndex) {
     if (winning.length) return lowestCard(winning);
   }
 
-  // When leading, offer an owned recovery, starting with the hardest one.
-  if (!trick.length) {
-    const ownedTargets = activeTasks.filter(t => t.owner === botIndex).map(t => t.card);
-    const leadTarget = ownedTargets.filter(target => legal.some(card => card.id === target.id))
-      .sort((a, b) => b.value - a.value)[0];
-    if (leadTarget) return leadTarget;
-  }
-
-  // Preserve a bot's own recovery card until it has a plausible chance to claim it.
+  // Preserve a bot's own recovery card until the public trick shows a winning play.
   const ownTargetIds = new Set(activeTasks.filter(t => t.owner === botIndex).map(t => t.card.id));
   const expendable = legal.filter(card => !ownTargetIds.has(card.id));
   return lowestCard(expendable.length ? expendable : legal);
