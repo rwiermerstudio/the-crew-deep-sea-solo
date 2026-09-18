@@ -32,7 +32,7 @@ function play(player,id){
  state.hands[player]=hand.filter(c=>c.id!==id); state.trick.push({player,card}); state.current=(player+1)%state.count; render();
  if(state.trick.length===state.count) resolveTrick(); else queueBots();
 }
-function queueBots(){if(!state.over&&state.current!==0)window.setTimeout(()=>{const card=botChoice(state.hands[state.current],state.trick,state.tasks,state.current,state.completedTricks);play(state.current,card.id)},420)}
+function queueBots(){if(!state.over&&state.current!==0)window.setTimeout(()=>{const card=botChoice(state.hands[state.current],state.trick,state.tasks,state.current,state.completedTricks,{playerCount:state.count,handSizes:state.hands.map(hand=>hand.length),samples:32});play(state.current,card.id)},420)}
 function resolveTrick(){
  const winner=trickWinner(state.trick).player; state.tricks++; const captured=state.trick.map(x=>x.card.id); let fail=false;
  state.tasks.forEach(t=>{if(!t.done&&!t.failed&&captured.includes(t.card.id)){if(t.owner===winner)t.done=true;else{t.failed=true;fail=true;}}});

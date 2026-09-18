@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeDeck, deal, cardCompare, legalCards, trickWinner, communicationKind, botChoice, knownVoidSuits, scoreBotCard } from '../src/game.js';
+import { makeDeck, deal, cardCompare, legalCards, trickWinner, communicationKind, botChoice, knownVoidSuits, scoreBotCard, estimateRolloutScore } from '../src/game.js';
 test('deck has 40 distinct cards', () => { const d = makeDeck(); assert.equal(d.length, 40); assert.equal(new Set(d.map(c => c.id)).size, 40); });
 test('deal is even at four players', () => assert.deepEqual(deal(4, () => .2).map(h => h.length), [10,10,10,10]));
 test('hand sorting keeps submarine trump cards on the right', () => {
@@ -36,4 +36,11 @@ test('task-winning play scores above a legal play that leaves the task exposed',
   const tasks=[{card:{suit:'coral',value:7,id:'coral-7'},owner:1,done:false}];
   const win={suit:'coral',value:8,id:'coral-8'}, lose={suit:'coral',value:2,id:'coral-2'};
   assert.ok(scoreBotCard(win,[win,lose],trick,tasks,1,[]) > scoreBotCard(lose,[win,lose],trick,tasks,1,[]));
+});
+test('rollout evaluator favours a simulated task capture over losing it', () => {
+  const win={suit:'coral',value:8,id:'coral-8'}, lose={suit:'coral',value:2,id:'coral-2'};
+  const trick=[{player:0,card:{suit:'coral',value:7,id:'coral-7'}}];
+  const tasks=[{card:{suit:'coral',value:7,id:'coral-7'},owner:1,done:false}];
+  const context={playerCount:2,handSizes:[1,2],samples:4,random:()=>0};
+  assert.ok(estimateRolloutScore(win,[win,lose],trick,tasks,1,context) > estimateRolloutScore(lose,[win,lose],trick,tasks,1,context));
 });
