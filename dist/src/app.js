@@ -16,7 +16,7 @@ el.start.addEventListener('click',start); el.restart.addEventListener('click',st
 function start(){
  const count=Number(el.players.value), hands=deal(count); const captain=captainFor(hands); const m=mission();
  const colors=hands.flat().filter(c=>c.suit!=='sub'); const targets=[...colors].sort((a,b)=>a.value-b.value||a.suit.localeCompare(b.suit)).slice(0,m.tasks);
- state={count,hands,captain,leader:captain,current:captain,trick:[],tasks:targets.map((card,i)=>({card,owner:(captain+i)%count,done:false,failed:false})),tricks:0,over:false,sonar:false,communicated:null,mission:m};
+ state={count,hands,captain,leader:captain,current:captain,trick:[],completedTricks:[],tasks:targets.map((card,i)=>({card,owner:(captain+i)%count,done:false,failed:false})),tricks:0,over:false,sonar:false,communicated:null,mission:m};
  el.restart.disabled=false; el.sonar.disabled=false; el.result.textContent='Dive in progress'; el.feedback.textContent='The captain starts the first trick.'; render(); queueBots();
 }
 function cardClass(card){return `card ${card.suit}`}
@@ -32,11 +32,11 @@ function play(player,id){
  state.hands[player]=hand.filter(c=>c.id!==id); state.trick.push({player,card}); state.current=(player+1)%state.count; render();
  if(state.trick.length===state.count) resolveTrick(); else queueBots();
 }
-function queueBots(){if(!state.over&&state.current!==0)window.setTimeout(()=>{const card=botChoice(state.hands[state.current],state.trick,state.tasks,state.current);play(state.current,card.id)},420)}
+function queueBots(){if(!state.over&&state.current!==0)window.setTimeout(()=>{const card=botChoice(state.hands[state.current],state.trick,state.tasks,state.current,state.completedTricks);play(state.current,card.id)},420)}
 function resolveTrick(){
  const winner=trickWinner(state.trick).player; state.tricks++; const captured=state.trick.map(x=>x.card.id); let fail=false;
  state.tasks.forEach(t=>{if(!t.done&&!t.failed&&captured.includes(t.card.id)){if(t.owner===winner)t.done=true;else{t.failed=true;fail=true;}}});
- state.leader=winner; state.current=winner; const summary=`${names[winner]} wins the trick.`; state.trick=[];
+ state.leader=winner; state.current=winner; state.completedTricks.push(state.trick.map(entry=>({...entry}))); const summary=`${names[winner]} wins the trick.`; state.trick=[];
  if(fail){state.over=true;el.result.textContent='Mission lost';el.feedback.textContent=`${summary} A recovery was claimed by the wrong diver.`;}
  else if(state.tasks.every(t=>t.done)){state.over=true;el.result.textContent='Mission complete';el.feedback.textContent=`${summary} All assigned recoveries secured.`;}
  else if(state.hands.every(h=>h.length===0)){state.over=true;el.result.textContent='Mission lost';el.feedback.textContent=`${summary} The expedition ran out of time.`;}

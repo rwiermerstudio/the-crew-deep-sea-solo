@@ -37,28 +37,48 @@ export function communicationKind(hand, card) {
   if (card.value === Math.min(...same)) return 'lowest';
   return null;
 }
-export function botChoice(hand, trick, tasks, botIndex) {
-  const legal = legalCards(hand, trick[0]?.card.suit);
+export function knownVoidSuits(history, playerIndex) {
+  const voids = new Set();
+  history.forEach(trick => {
+    const leadSuit = trick[0]?.card.suit;
+    trick.filter(entry => entry.player === playerIndex && entry.card.suit !== leadSuit)
+      .forEach(() => voids.add(leadSuit));
+  });
+  return voids;
+}
+export function scoreBotCard(card, hand, trick, tasks, botIndex, history = []) {
   const activeTasks = tasks.filter(t => !t.done && !t.failed);
-  const projectedWinner = card => trickWinner([...trick, { player: botIndex, card }]).player;
   const taskInTrick = activeTasks.find(t => trick.some(entry => entry.card.id === t.card.id));
-
-  // Do not take a teammate's recovery when a legal losing discard exists.
-  if (taskInTrick && taskInTrick.owner !== botIndex) {
-    const losing = legal.filter(card => projectedWinner(card) !== botIndex);
-    if (losing.length) return lowestCard(losing);
-  }
-
-  // Secure an active recovery assigned to this bot with the cheapest winning card.
-  if (taskInTrick?.owner === botIndex) {
-    const winning = legal.filter(card => projectedWinner(card) === botIndex);
-    if (winning.length) return lowestCard(winning);
-  }
-
-  // Preserve a bot's own recovery card until the public trick shows a winning play.
+  const projectedWinner = trick.length ? trickWinner([...trick, { player: botIndex, card }]).player : null;
   const ownTargetIds = new Set(activeTasks.filter(t => t.owner === botIndex).map(t => t.card.id));
-  const expendable = legal.filter(card => !ownTargetIds.has(card.id));
-  return lowestCard(expendable.length ? expendable : legal);
+  let score = 0;
+
+  if (taskInTrick) {
+    if (taskInTrick.owner === botIndex) score += projectedWinner === botIndex ? 1000 : -700;
+    else score += projectedWinner === botIndex ? -1000 : 100;
+  } else if (ownTargetIds.has(card.id)) {
+    // Do not expose a target card before the public table proves it can be taken safely.
+    score -= 900;
+  }
+
+  if (!trick.length) {
+    const voidOpponents = new Set();
+    history.forEach(previous => previous.forEach(entry => {
+      if (entry.player !== botIndex && knownVoidSuits(history, entry.player).has(card.suit)) voidOpponents.add(entry.player);
+    }));
+    // A known void can turn this lead into an unwanted trump opportunity.
+    score -= voidOpponents.size * 90;
+    score += hand.filter(candidate => candidate.suit === card.suit).length * 10;
+    score += card.value;
+  }
+
+  // Trump is a scarce rescue resource, so spend it only for an objective.
+  if (card.suit === 'sub' && !(taskInTrick?.owner === botIndex && projectedWinner === botIndex)) score -= 35 + card.value;
+  return score;
+}
+export function botChoice(hand, trick, tasks, botIndex, history = []) {
+  const legal = legalCards(hand, trick[0]?.card.suit);
+  return [...legal].sort((a, b) => scoreBotCard(b, hand, trick, tasks, botIndex, history) - scoreBotCard(a, hand, trick, tasks, botIndex, history) || cardCompare(a, b))[0];
 }
 function lowestCard(cards) {
   return [...cards].sort((a, b) => (a.suit === 'sub') - (b.suit === 'sub') || a.value - b.value || a.suit.localeCompare(b.suit))[0];
