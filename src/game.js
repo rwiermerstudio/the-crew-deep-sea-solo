@@ -13,7 +13,10 @@ export function deal(playerCount, random = Math.random) {
   deck.forEach((card, i) => { if (i < Math.floor(deck.length / playerCount) * playerCount) hands[i % playerCount].push(card); });
   hands.forEach(hand => hand.sort(cardCompare)); return hands;
 }
-export function cardCompare(a, b) { return (a.suit + String(a.value).padStart(2, '0')).localeCompare(b.suit + String(b.value).padStart(2, '0')); }
+export function cardCompare(a, b) {
+  const suitOrder = [...SUITS, 'sub'];
+  return suitOrder.indexOf(a.suit) - suitOrder.indexOf(b.suit) || a.value - b.value;
+}
 export function legalCards(hand, leadSuit) { const matching = leadSuit ? hand.filter(c => c.suit === leadSuit) : []; return matching.length ? matching : hand; }
 export function trickWinner(trick) {
   const lead = trick[0].card.suit;
