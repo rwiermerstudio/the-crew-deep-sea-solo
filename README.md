@@ -8,7 +8,7 @@ A static, browser-only fan companion for *The Crew: Mission Deep Sea*. It gives 
 - The holder of Submarine 4 captains the first trick.
 - Follow suit where possible; submarines are trump.
 - Each recovery task names a target card and the diver who must win that trick.
-- AI divers take their turns automatically; they do not expose their hands.
+- AI divers take their turns automatically. They preserve assigned recoveries, avoid stealing a teammate’s active recovery when a losing card is available, choose the cheapest winning card for their own active recovery, and lead their hard owned tasks.
 - Use **Broadcast sonar** once to disclose an automatically selected legal card fact from your hand.
 
 The mission briefings are short original summaries and the UI uses original CSS artwork. Published card art, task-card faces, exact logbook prose, and mission-card scans are deliberately excluded. This is unofficial, non-commercial, and requires familiarity with the published game rules.

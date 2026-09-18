@@ -36,11 +36,36 @@ export function communicationKind(hand, card) {
 }
 export function botChoice(hand, trick, tasks, botIndex) {
   const legal = legalCards(hand, trick[0]?.card.suit);
-  const target = tasks.find(t => !t.done && t.owner === botIndex);
-  // Prefer a legal task card, otherwise avoid winning an unowned/other-owned target if possible.
-  const taskCard = target && legal.find(c => c.id === target.card.id);
-  if (taskCard) return taskCard;
-  const ranked = [...legal].sort((a, b) => a.value - b.value || a.suit.localeCompare(b.suit));
-  return ranked[0];
+  const activeTasks = tasks.filter(t => !t.done && !t.failed);
+  const projectedWinner = card => trickWinner([...trick, { player: botIndex, card }]).player;
+  const taskInTrick = activeTasks.find(t => trick.some(entry => entry.card.id === t.card.id));
+
+  // Do not take a teammate's recovery when a legal losing discard exists.
+  if (taskInTrick && taskInTrick.owner !== botIndex) {
+    const losing = legal.filter(card => projectedWinner(card) !== botIndex);
+    if (losing.length) return lowestCard(losing);
+  }
+
+  // Secure an active recovery assigned to this bot with the cheapest winning card.
+  if (taskInTrick?.owner === botIndex) {
+    const winning = legal.filter(card => projectedWinner(card) === botIndex);
+    if (winning.length) return lowestCard(winning);
+  }
+
+  // When leading, offer an owned recovery, starting with the hardest one.
+  if (!trick.length) {
+    const ownedTargets = activeTasks.filter(t => t.owner === botIndex).map(t => t.card);
+    const leadTarget = ownedTargets.filter(target => legal.some(card => card.id === target.id))
+      .sort((a, b) => b.value - a.value)[0];
+    if (leadTarget) return leadTarget;
+  }
+
+  // Preserve a bot's own recovery card until it has a plausible chance to claim it.
+  const ownTargetIds = new Set(activeTasks.filter(t => t.owner === botIndex).map(t => t.card.id));
+  const expendable = legal.filter(card => !ownTargetIds.has(card.id));
+  return lowestCard(expendable.length ? expendable : legal);
+}
+function lowestCard(cards) {
+  return [...cards].sort((a, b) => (a.suit === 'sub') - (b.suit === 'sub') || a.value - b.value || a.suit.localeCompare(b.suit))[0];
 }
 export function cardLabel(card) { return `${SUIT_NAMES[card.suit]} ${card.value}`; }
