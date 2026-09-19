@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeDeck, deal, cardCompare, legalCards, trickWinner, communicationKind, botChoice, knownVoidSuits, scoreBotCard, estimateRolloutScore, assignTaskOwners, canLeadCard, balanceViolation } from '../src/game.js';
+import { NAUTICAL_PATTERN, soundEventProfile } from '../src/audio.js';
 test('deck has 40 distinct cards', () => { const d = makeDeck(); assert.equal(d.length, 40); assert.equal(new Set(d.map(c => c.id)).size, 40); });
 test('deal is even at four players', () => assert.deepEqual(deal(4, () => .2).map(h => h.length), [10,10,10,10]));
 test('hand sorting keeps submarine trump cards on the right', () => {
@@ -58,4 +59,8 @@ test('balance mission fails when one diver has two more marked cards than anothe
   const history=[[{player:0,card:{value:9}},{player:1,card:{value:2}}],[{player:0,card:{value:9}},{player:1,card:{value:3}}]];
   assert.equal(balanceViolation(history,9,2),true);
   assert.equal(balanceViolation(history,9,3),false);
+});
+test('nautical sound design has a looping pattern and named effect profiles', () => {
+  assert.ok(NAUTICAL_PATTERN.length >= 8);
+  assert.deepEqual(Object.keys(soundEventProfile).sort(),['loss','play','sonar','win']);
 });
