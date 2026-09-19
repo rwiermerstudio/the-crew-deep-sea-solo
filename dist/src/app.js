@@ -23,7 +23,7 @@ function start(){
  let tasks=assignTaskOwners(targets.map(card=>({card})),captain,count,rules.ownerMode||'roundRobin',captain);
  if(rules.hardestCaptain&&tasks.length) tasks=tasks.map((task,index)=>index===tasks.length-1?{...task,owner:captain}:task);
  state={count,hands,captain,leader:captain,current:captain,trick:[],completedTricks:[],tasks,rules,tricks:0,over:false,sonar:false,sonarLeft:rules.sharedSonar||1,communicated:null,mission:m,timerLeft:rules.timer||0,timerId:null};
- if(rules.timer) state.timerId=setInterval(()=>{if(state.over)return clearInterval(state.timerId);state.timerLeft--;if(state.timerLeft<=0){state.over=true;el.result.textContent='Mission lost';el.feedback.textContent='Time expired.';clearInterval(state.timerId);}render()},1000);
+ audio.setMood(state); if(rules.timer) state.timerId=setInterval(()=>{if(state.over)return clearInterval(state.timerId);state.timerLeft--;audio.setMood(state);if(state.timerLeft<=0){state.over=true;audio.setMood(state);el.result.textContent='Mission lost';el.feedback.textContent='Time expired.';clearInterval(state.timerId);}render()},1000);
  el.restart.disabled=false; el.sonar.disabled=!!rules.noSonar; el.result.textContent='Dive in progress'; el.feedback.textContent='The captain starts the first trick.'; render(); queueBots();
 }
 function cardClass(card){return `card ${card.suit}`}
@@ -48,7 +48,7 @@ function resolveTrick(){
  else if(state.tasks.every(t=>t.done)){state.over=true;audio.effect('win');el.result.textContent='Mission complete';el.feedback.textContent=`${summary} All assigned recoveries secured.`;}
  else if(state.hands.every(h=>h.length===0)){state.over=true;audio.effect('loss');el.result.textContent='Mission lost';el.feedback.textContent=`${summary} The expedition ran out of time.`;}
  else el.feedback.textContent=summary;
- render();queueBots();
+ audio.setMood(state); render();queueBots();
 }
 function sonar(){
  if(!state.sonarLeft||state.over||state.rules.noSonar||state.tricks<(state.rules.noSonarBefore||0)||!state.hands?.[0])return; const card=state.hands[0].find(c=>communicationKind(state.hands[0],c));

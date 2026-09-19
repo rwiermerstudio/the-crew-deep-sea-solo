@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeDeck, deal, cardCompare, legalCards, trickWinner, communicationKind, botChoice, knownVoidSuits, scoreBotCard, estimateRolloutScore, assignTaskOwners, canLeadCard, balanceViolation } from '../src/game.js';
-import { NAUTICAL_PATTERN, soundEventProfile } from '../src/audio.js';
+import { NAUTICAL_PATTERN, soundEventProfile, musicMoodFor } from '../src/audio.js';
 test('deck has 40 distinct cards', () => { const d = makeDeck(); assert.equal(d.length, 40); assert.equal(new Set(d.map(c => c.id)).size, 40); });
 test('deal is even at four players', () => assert.deepEqual(deal(4, () => .2).map(h => h.length), [10,10,10,10]));
 test('hand sorting keeps submarine trump cards on the right', () => {
@@ -63,4 +63,9 @@ test('balance mission fails when one diver has two more marked cards than anothe
 test('nautical sound design has a looping pattern and named effect profiles', () => {
   assert.ok(NAUTICAL_PATTERN.length >= 8);
   assert.deepEqual(Object.keys(soundEventProfile).sort(),['loss','play','sonar','win']);
+});
+test('music mood varies for timed pressure and completed-mission calm', () => {
+  assert.equal(musicMoodFor({timerLeft:25,rules:{timer:180},over:false}),'pressure');
+  assert.equal(musicMoodFor({timerLeft:0,rules:{},over:true}),'calm');
+  assert.equal(musicMoodFor({timerLeft:0,rules:{bannedLeads:['coral']},over:false}),'mystery');
 });
