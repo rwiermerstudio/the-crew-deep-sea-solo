@@ -37,6 +37,16 @@ export function communicationKind(hand, card) {
   if (card.value === Math.min(...same)) return 'lowest';
   return null;
 }
+export function assignTaskOwners(tasks, captain, playerCount, mode = 'roundRobin', singleOwner = captain) {
+  return tasks.map((task, index) => ({ ...task, owner: mode === 'captain' ? captain : mode === 'single' ? singleOwner : (captain + index) % playerCount, done: false, failed: false }));
+}
+export function canLeadCard(card, trick, bannedSuits = []) { return trick.length > 0 || !bannedSuits.includes(card.suit); }
+export function balanceViolation(history, value, allowedLead = 2) {
+  const counts = new Map(), players = new Set();
+  history.flat().forEach(entry => { players.add(entry.player); if (entry.card.value === value) counts.set(entry.player, (counts.get(entry.player) || 0) + 1); });
+  const values = [...players].map(player => counts.get(player) || 0);
+  return values.length > 1 && Math.max(...values) - Math.min(...values) >= allowedLead;
+}
 export function knownVoidSuits(history, playerIndex) {
   const voids = new Set();
   history.forEach(trick => {

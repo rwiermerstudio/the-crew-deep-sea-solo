@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makeDeck, deal, cardCompare, legalCards, trickWinner, communicationKind, botChoice, knownVoidSuits, scoreBotCard, estimateRolloutScore } from '../src/game.js';
+import { makeDeck, deal, cardCompare, legalCards, trickWinner, communicationKind, botChoice, knownVoidSuits, scoreBotCard, estimateRolloutScore, assignTaskOwners, canLeadCard, balanceViolation } from '../src/game.js';
 test('deck has 40 distinct cards', () => { const d = makeDeck(); assert.equal(d.length, 40); assert.equal(new Set(d.map(c => c.id)).size, 40); });
 test('deal is even at four players', () => assert.deepEqual(deal(4, () => .2).map(h => h.length), [10,10,10,10]));
 test('hand sorting keeps submarine trump cards on the right', () => {
@@ -43,4 +43,19 @@ test('rollout evaluator favours a simulated task capture over losing it', () => 
   const tasks=[{card:{suit:'coral',value:7,id:'coral-7'},owner:1,done:false}];
   const context={playerCount:2,handSizes:[1,2],samples:4,random:()=>0};
   assert.ok(estimateRolloutScore(win,[win,lose],trick,tasks,1,context) > estimateRolloutScore(lose,[win,lose],trick,tasks,1,context));
+});
+test('captain and single-diver mission rules assign every task to the required owner', () => {
+  const tasks=[{card:{id:'coral-1',suit:'coral',value:1}},{card:{id:'sun-2',suit:'sun',value:2}}];
+  assert.deepEqual(assignTaskOwners(tasks,2,4,'captain').map(t=>t.owner),[2,2]);
+  assert.deepEqual(assignTaskOwners(tasks,2,4,'single',1).map(t=>t.owner),[1,1]);
+});
+test('lead restrictions prevent banned suits but do not block following suit', () => {
+  assert.equal(canLeadCard({suit:'coral'},[],['coral','sub']),false);
+  assert.equal(canLeadCard({suit:'sun'},[],['coral','sub']),true);
+  assert.equal(canLeadCard({suit:'coral'},[{card:{suit:'sun'}}],['coral','sub']),true);
+});
+test('balance mission fails when one diver has two more marked cards than another', () => {
+  const history=[[{player:0,card:{value:9}},{player:1,card:{value:2}}],[{player:0,card:{value:9}},{player:1,card:{value:3}}]];
+  assert.equal(balanceViolation(history,9,2),true);
+  assert.equal(balanceViolation(history,9,3),false);
 });
